@@ -284,7 +284,7 @@
 // ================================================
 // ★ 여기에 Apps Script 배포 URL을 붙여넣으세요 ★
 // ================================================
-const SCRIPT_URL = 'https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbxk4P_jTHOUhjz-M9I0H3A4Wz-ypeA1WVgod1AlTEaHsdnZnLuYzHdjbLGPTGPIjLhF/exec/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxnb4eoOfT2W8q5u4Q7JO_LeMDCGSrbqlLjexOlRYe5UMuMvm5YE3hvpQ9T2hYdGtsB/exec';
 // ================================================
 
 let reservations = [];
@@ -410,10 +410,8 @@ async function loadReservations() {
 async function cancelRes(id) {
   if (!confirm('예약을 취소하시겠습니까?')) return;
   try {
-    const res = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'cancel', id })
-    });
+    const url = `${SCRIPT_URL}?action=cancel&id=${encodeURIComponent(id)}`;
+    const res = await fetch(url);
     const data = await res.json();
     if (data.success) {
       showToast('예약이 취소되었습니다.');
@@ -441,10 +439,8 @@ async function submitReservation() {
   btn.disabled = true; btn.textContent = '처리 중...';
 
   try {
-    const res = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'add', date, start, end, room: selectedRoom, team, name, tel })
-    });
+    const params = new URLSearchParams({ action: 'add', date, start, end, room: selectedRoom, team, name, tel });
+    const res = await fetch(`${SCRIPT_URL}?${params.toString()}`);
     const data = await res.json();
     if (data.success) {
       showToast(`${selectedRoom} 예약 완료!`);
