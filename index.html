@@ -270,7 +270,7 @@
       </div>
       <div class="form-group">
         <label>연락처</label>
-        <input type="tel" id="f_tel" placeholder="예: 010-0000-0000">
+        <input type="tel" id="f_tel" placeholder="예: 01012345678" maxlength="11" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
       </div>
 
       <button class="submit-btn" id="submitBtn" onclick="submitReservation()">예약 확정</button>
@@ -284,7 +284,7 @@
 // ================================================
 // ★ 여기에 Apps Script 배포 URL을 붙여넣으세요 ★
 // ================================================
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwBgj4knC9WN-I761h33KoCImbo13-4sIrHrxxfv4dN8I1CVLbrGxhc3knLkj482eDA/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx-5jWLJnDyzI9O05ckprfXIIwcBaHe0U2RZPPR20T16rNDnEQ7j0XBkLv7HIjTmLtx/exec';
 // ================================================
 
 let reservations = [];
@@ -404,6 +404,7 @@ async function loadReservations() {
   document.getElementById('calGrid').style.display = 'grid';
   renderCalendar();
   if (selectedDate) showDayDetail(selectedDate);
+  initForm();
 }
 
 // ── 예약 취소 ──
@@ -470,13 +471,47 @@ function initForm() {
   }
   const s = document.getElementById('f_start');
   const e = document.getElementById('f_end');
-  s.innerHTML = times.map(t => `<option>${t}</option>`).join('');
-  s.value = '09:00';
-  s.onchange = () => {
+
+  function isStartBlocked(t) {
+    const date = document.getElementById('f_date').value;
+    const booked = reservations.filter(r => r.date === date && r.room === selectedRoom);
+    return booked.some(r => t >= r.start && t < r.end);
+  }
+
+  function updateStartOptions() {
+    s.innerHTML = times.map(t => {
+      const blocked = isStartBlocked(t);
+      return `<option value="${t}" ${blocked ? 'disabled' : ''}>${t}${blocked ? ' (예약됨)' : ''}</option>`;
+    }).join('');
+    const firstAvail = times.find(t => !isStartBlocked(t));
+    if (firstAvail) s.value = firstAvail;
+    updateEndOptions();
+  }
+
+  function updateEndOptions() {
+    const date = document.getElementById('f_date').value;
+    const booked = reservations.filter(r => r.date === date && r.room === selectedRoom);
     const idx = times.indexOf(s.value);
-    e.innerHTML = times.slice(idx + 1).map(t => `<option>${t}</option>`).join('');
+    const nextBookedStart = booked.map(r => r.start).filter(t => t > s.value).sort()[0];
+    e.innerHTML = times.slice(idx + 1).map(t => {
+      const blocked = nextBookedStart && t > nextBookedStart;
+      return `<option value="${t}" ${blocked ? 'disabled' : ''}>${t}${blocked ? ' (예약됨)' : ''}</option>`;
+    }).join('');
+    const firstEnd = times.slice(idx + 1).find(t => !nextBookedStart || t <= nextBookedStart);
+    if (firstEnd) e.value = firstEnd;
+  }
+
+  s.onchange = updateEndOptions;
+  document.getElementById('f_date').onchange = updateStartOptions;
+
+  window.selectRoom = function(r) {
+    selectedRoom = r;
+    document.getElementById('opt-r1').className = 'room-option r1' + (r === '회의실1' ? ' selected' : '');
+    document.getElementById('opt-r2').className = 'room-option r2' + (r === '회의실2' ? ' selected' : '');
+    updateStartOptions();
   };
-  s.onchange();
+
+  updateStartOptions();
 }
 
 // ── 토스트 ──
