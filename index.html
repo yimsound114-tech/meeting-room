@@ -272,6 +272,10 @@
         <label>연락처</label>
         <input type="tel" id="f_tel" placeholder="예: 01012345678" maxlength="11" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
       </div>
+      <div class="form-group">
+        <label>취소 비밀번호 (숫자 4자리)</label>
+        <input type="password" id="f_pw" placeholder="예약 취소 시 필요합니다" maxlength="4" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+      </div>
 
       <button class="submit-btn" id="submitBtn" onclick="submitReservation()">예약 확정</button>
     </div>
@@ -284,7 +288,7 @@
 // ================================================
 // ★ 여기에 Apps Script 배포 URL을 붙여넣으세요 ★
 // ================================================
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyChhFep8aknrSceeeDUnY1LIT0OGV_ZTF2NCsAQLZQvg3fn3JsiL306b_EkPHNnaaO/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOGe7S8xSqr5Owv6HqXuhndoSBby2ugfU-sXA057HpB9WlGG5Xw5f74Rv-4RgKVPmi/exec';
 // ================================================
 
 let reservations = [];
@@ -409,9 +413,11 @@ async function loadReservations() {
 
 // ── 예약 취소 ──
 async function cancelRes(id) {
-  if (!confirm('예약을 취소하시겠습니까?')) return;
+  const pw = prompt('예약 취소 비밀번호 4자리를 입력하세요:');
+  if (pw === null) return;
+  if (!pw || pw.length !== 4) { showToast('비밀번호는 숫자 4자리입니다.', true); return; }
   try {
-    const url = `${SCRIPT_URL}?action=cancel&id=${encodeURIComponent(id)}`;
+    const url = `${SCRIPT_URL}?action=cancel&id=${encodeURIComponent(id)}&pw=${encodeURIComponent(pw)}`;
     const res = await fetch(url);
     const data = await res.json();
     if (data.success) {
@@ -433,14 +439,16 @@ async function submitReservation() {
   const team  = document.getElementById('f_team').value.trim();
   const name  = document.getElementById('f_name').value.trim();
   const tel   = document.getElementById('f_tel').value.trim();
+  const pw    = document.getElementById('f_pw').value.trim();
 
-  if (!date || !team || !name || !tel) { showToast('모든 항목을 입력해주세요.', true); return; }
+  if (!date || !team || !name || !tel || !pw) { showToast('모든 항목을 입력해주세요.', true); return; }
+  if (pw.length !== 4) { showToast('비밀번호는 숫자 4자리로 입력해주세요.', true); return; }
 
   const btn = document.getElementById('submitBtn');
   btn.disabled = true; btn.textContent = '처리 중...';
 
   try {
-    const params = new URLSearchParams({ action: 'add', date, start, end, room: selectedRoom, team, name, tel });
+    const params = new URLSearchParams({ action: 'add', date, start, end, room: selectedRoom, team, name, tel, pw });
     const res = await fetch(`${SCRIPT_URL}?${params.toString()}`);
     const data = await res.json();
     if (data.success) {
@@ -448,6 +456,7 @@ async function submitReservation() {
       document.getElementById('f_team').value = '';
       document.getElementById('f_name').value = '';
       document.getElementById('f_tel').value  = '';
+      document.getElementById('f_pw').value   = '';
       await loadReservations();
       setTimeout(() => showPage('calendar'), 600);
     } else {
