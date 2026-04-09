@@ -88,22 +88,30 @@
   .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
   .cal-day-label { text-align: center; font-size: 11px; color: #999; padding: 4px 0; font-weight: 600; }
   .cal-cell {
-    min-height: 66px; border: 1px solid #f0f0f0; border-radius: 8px;
-    padding: 5px; cursor: pointer; transition: border-color .1s, background .1s;
-    background: #fff;
+    min-height: 54px; border: 1px solid #f0f0f0; border-radius: 6px;
+    padding: 4px 3px; cursor: pointer; transition: border-color .1s, background .1s;
+    background: #fff; overflow: hidden;
   }
   .cal-cell:hover { border-color: #a0aec0; background: #f8f8f8; }
   .cal-cell.empty { background: transparent; border-color: transparent; cursor: default; }
   .cal-cell.today { border-color: #3b82f6 !important; }
-  .cal-cell .day-num { font-size: 12px; font-weight: 600; color: #1d1d1f; margin-bottom: 2px; }
+  .cal-cell .day-num { font-size: 11px; font-weight: 600; color: #1d1d1f; margin-bottom: 2px; }
   .cal-cell.today .day-num { color: #3b82f6; }
   .badge {
-    font-size: 9px; padding: 1px 4px; border-radius: 3px;
+    font-size: 8px; padding: 1px 3px; border-radius: 2px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    display: block; margin-bottom: 1px; line-height: 1.6;
+    display: block; margin-bottom: 1px; line-height: 1.5;
   }
   .badge.r1 { background: #dbeafe; color: #1e40af; }
   .badge.r2 { background: #dcfce7; color: #166534; }
+  @media (max-width: 480px) {
+    .app { padding: .75rem .75rem 4rem; }
+    .cal-cell { min-height: 44px; padding: 3px 2px; border-radius: 5px; }
+    .cal-cell .day-num { font-size: 10px; }
+    .badge { font-size: 7px; padding: 1px 2px; }
+    .month-title { font-size: 15px; }
+    .cal-day-label { font-size: 10px; }
+  }
 
   /* ── 일별 상세 ── */
   .day-detail { margin-top: 1rem; }
@@ -143,6 +151,10 @@
   }
   .form-group input:focus, .form-group select:focus { outline: none; border-color: #3b82f6; }
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 480px) {
+    .form-row { grid-template-columns: 1fr; }
+    .form-group input, .form-group select { height: 46px; font-size: 16px; }
+  }
 
   /* ── 회의실 선택 카드 ── */
   .room-select-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1.1rem; }
@@ -472,8 +484,11 @@ async function submitReservation() {
 function initForm() {
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
-  document.getElementById('f_date').value = todayStr;
-  document.getElementById('f_date').min   = todayStr;
+  const currentVal = document.getElementById('f_date').value;
+  if (!currentVal || currentVal < todayStr) {
+    document.getElementById('f_date').value = todayStr;
+  }
+  document.getElementById('f_date').min = todayStr;
   const times = [];
   for (let h = 8; h <= 21; h++) {
     ['00','30'].forEach(m => { if (h === 21 && m === '30') return; times.push(`${pad(h)}:${m}`); });
